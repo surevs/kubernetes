@@ -1,8 +1,7 @@
 serviceindex:
-  name: Index Service
-  infoEndpoint: "/info"
+  name: index
   repository: reportportal/service-index
-  tag: 5.0.2
+  tag: 5.0.3
   pullPolicy: Always
   resources:
     requests:
@@ -14,24 +13,22 @@ serviceindex:
 
 uat:
   repository: reportportal/service-authorization
-  name: Authorization Service
-  infoEndpoint: "/info"
-  tag: 5.0.0-BETA-10
+  name: uat
+  tag: 5.0.0-BETA-12
   pullPolicy: Always
   resources:
     requests:
       cpu: 100m
-      memory: 128Mi
-    limits:
-      cpu: 250m
       memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 2048Mi
   sessionLiveTime: 86400
 
 serviceui:
   repository: reportportal/service-ui
   tag: 5.0.0-BETA-12
-  name: UI Service
-  infoEndpoint: "/info"
+  name: ui
   pullPolicy: Always
   resources:
     requests:
@@ -43,21 +40,25 @@ serviceui:
 
 serviceapi:
   repository: reportportal/service-api
-  tag: 5.0.0-BETA-9
-  name: API Service
-  infoEndpoint: "/info"
+  tag: 5.0.0-BETA-12
+  name: api
   pullPolicy: Always
+  readinessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 20
+    timeoutSeconds: 3
+    failureThreshold: 20
   resources:
     requests:
-      cpu: 200m
-      memory: 1000Mi
+      cpu: 500m
+      memory: 1024Mi
     limits:
-      cpu: 300m
-      memory: 1500Mi
+      cpu: 1000m
+      memory: 2048Mi
 
 migrations:
   repository: reportportal/migrations
-  tag: 5.0.0-BETA-8
+  tag: 5.0.0-BETA-9
   pullPolicy: Always
   resources:
     requests:
@@ -69,9 +70,8 @@ migrations:
 
 serviceanalyzer:
   repository: reportportal/service-analyzer
-  tag: 5.0.0-BETA-1
-  name: Analyzer Service
-  infoEndpoint: "/info"
+  tag: 5.0.0-BETA-4
+  name: analyzer
   pullPolicy: Always
   resources:
     requests:
@@ -104,7 +104,7 @@ postgresql:
     port: 5432
     user: rpuser
     dbName: reportportal
-    password: 
+    password:
 
 elasticsearch:
   installdep:
@@ -112,8 +112,15 @@ elasticsearch:
   endpoint:
     external: true
     cloudservice: false
-    address: <es_chart_name>-elasticsearch-client.default.svc
+    address: <es_chart_name>-elasticsearch-coordinating-only.default.svc.cluster.local
     port: 9200
+
+minio:
+  enabled: false
+  installdep:
+    enable: false
+  endpoint: http://<minio-release-name>.default.svc.cluster.local:9000
+  secretName: minio
 
 # Ingress configuration for the ui
 # If you have installed ingress controller and want to expose application - set INGRESS.ENABLE to true.
@@ -137,3 +144,16 @@ nodeSelector:
   enabled: false
   selector:
     reportportal: true
+
+
+# RBAC is required for service-index in order to collect status/info over all services
+rbac:
+  create: true
+  serviceAccount:
+      create: true
+      name: reportportal
+
+rp:
+  infoEndpoint: "/info"
+  healthEndpoint: "/health"
+
